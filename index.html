@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Donkey Paradise - найкращий магазин віслюків в Україні. Купуйте здорових та доглянутих віслюків за найкращими цінами.">
+    <title>Donkey Paradise 🫏 Магазин віслюків</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Навігація -->
+    <nav class="navbar" id="navbar">
+        <div class="container nav-container">
+            <a href="#" class="logo">
+                <span class="logo-icon">🫏</span>
+                <span class="logo-text">Donkey Paradise</span>
+            </a>
+            <button class="nav-toggle" id="navToggle" aria-label="Відкрити меню">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="#home" class="nav-link active">Головна</a></li>
+                <li><a href="#catalog" class="nav-link">Каталог</a></li>
+                <li><a href="#about" class="nav-link">Про нас</a></li>
+                <li><a href="#services" class="nav-link">Послуги</a></li>
+                <li><a href="#reviews" class="nav-link">Відгуки</a></li>
+                <li><a href="#contact" class="nav-link">Контакти</a></li>
+            </ul>
+            <div class="nav-actions">
+                <button class="cart-btn" id="cartBtn" aria-label="Кошик">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="9" cy="21" r="1"></circle>
+                        <circle cx="20" cy="21" r="1"></circle>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                    </svg>
+                    <span class="cart-count" id="cartCount">0</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero секція -->
+    <header class="hero" id="home">
+        <div class="hero-bg"></div>
+        <div class="container hero-content">
+            <div class="hero-text">
+                <span class="hero-badge">🏆 #1 Магазин в Україні</span>
+                <h1 class="hero-title">Знайдіть свого <span class="highlight">ідеального</span> віслюка</h1>
+                <p class="hero-description">Понад 15 років досвіду у розведенні віслюків. Здорові, доглянуті та привчені до людей тварини з повним пакетом документів.</p>
+                <div class="hero-buttons">
+                    <a href="#catalog" class="btn btn-primary">
+                        <span>Переглянути каталог</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </a>
+                    <a href="#contact" class="btn btn-secondary">Зв'язатися з нами</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <span class="stat-number" data-target="500">0</span>
+                        <span class="stat-label">Задоволених клієнтів</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number" data-target="15">0</span>
+                        <span class="stat-label">Років досвіду</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number" data-target="50">0</span>
+                        <span class="stat-label">Віслюків у наявності</span>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-image">
+                <div class="hero-image-wrapper">
+                    <div class="hero-donkey-emoji">🫏</div>
+                    <div class="hero-decoration hero-decoration-1"></div>
+                    <div class="hero-decoration hero-decoration-2"></div>
+                    <div class="hero-decoration hero-decoration-3"></div>
+                </div>
+            </div>
+        </div>
+        <div class="hero-scroll">
+            <a href="#catalog" class="scroll-indicator">
+                <span>Прокрутіть вниз</span>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 5v14M5 12l7 7 7-7"/>
+                </svg>
+            </a>
+        </div>
+    </header>
+
+    <!-- Каталог -->
+    <section class="catalog" id="catalog">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-badge">Наш каталог</span>
+                <h2 class="section-title">Оберіть свого <span class="highlight">компаньйона</span></h2>
+                <p class="section-description">Кожен наш віслюк унікальний. Знайдіть того, хто стане вашим вірним другом.</p>
+            </div>
+            
+            <div class="catalog-filters">
+                <button class="filter-btn active" data-filter="all">Всі</button>
+                <button class="filter-btn" data-filter="young">Молоді</button>
+                <button class="filter-btn" data-filter="adult">Дорослі</button>
+                <button class="filter-btn" data-filter="miniature">Мініатюрні</button>
+            </div>
+
+            <div class="catalog-grid" id="catalogGrid">
+                <!-- Картки товарів -->
+                <article class="product-card" data-category="young" data-id="1">
+                    <div class="product-image">
+                        <div class="product-emoji">🫏</div>
+                        <span class="product-badge badge-new">Новинка</span>
+                        <div class="product-overlay">
+                            <button class="quick-view-btn" data-id="1">Швидкий перегляд</button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <span class="product-category">Молодий • 2 роки</span>
+                        <h3 class="product-name">Барні</h3>
+                        <p class="product-description">Грайливий та дружелюбний віслюк сірого забарвлення. Чудово ладнає з дітьми.</p>
+                        <div class="product-footer">
+                            <div class="product-price">
+                                <span class="price-current">₴15,000</span>
+                            </div>
+                            <button class="add-to-cart-btn" data-id="1" data-name="Барні" data-price="15000">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 5v14M5 12h14"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="product-card" data-category="adult" data-id="2">
+                    <div class="product-image">
+                        <div class="product-emoji">🫏</div>
+                        <span class="product-badge badge-popular">Популярний</span>
+                        <div class="product-overlay">
+                            <button class="quick-view-btn" data-id="2">Швидкий перегляд</button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <span class="product-category">Дорослий • 6 років</span>
+                        <h3 class="product-name">Марта</h3>
+                        <p class="product-description">Спокійна та врівноважена самка. Ідеальна для фермерського господарства.</p>
+                        <div class="product-footer">
+                            <div class="product-price">
+                                <span class="price-current">₴22,000</span>
+                            </div>
+                            <button class="add-to-cart-btn" data-id="2" data-name="Марта" data-price="22000">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 5v14M5 12h14"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="product-card" data-category="miniature" data-id="3">
+                    <div class="product-image">
+                        <div class="product-emoji">🫏</div>
+                        <span class="product-badge badge-sale">-20%</span>
+                        <div class="product-overlay">
+                            <button class="quick-view-btn" data-id="3">Швидкий перегляд</button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <span class="product-category">Мініатюрний • 3 роки</span>
+                        <h3 class="product-name">Піксель</h3>
+                        <p class="product-description">Маленький, але з великим серцем. Зріст всього 90 см. Ідеальний компаньйон.</p>
+                        <div class="product-footer">
+                            <div class="product-price">
+                                <span class="price-old">₴25,000</span>
+                                <span class="price-current">₴20,000</span>
+                            </div>
+                            <button class="add-to-cart-btn" data-id="3" data-name="Піксель" data-price="20000">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 5v14M5 12h14"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="product-card" data-category="young" data-id="4">
+                    <div class="product-image">
+                        <div class="product-emoji">🫏</div>
+                        <div class="product-overlay">
+                            <button class="quick-view-btn" data-id="4">Швидкий перегляд</button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <span class="product-category">Молодий • 1.5 роки</span>
+                        <h3 class="product-name">Зевс</h3>
+                        <p class="product-description">Енергійний молодий віслюк коричневого забарвлення. Любить бігати та гратися.</p>
+                        <div class="product-footer">
+                            <div class="product-price">
+                                <span class="price-current">₴13,500</span>
+                            </div>
+                            <button class="add-to-cart-btn" data-id="4" data-name="Зевс" data-price="13500">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 5v14M5 12h14"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="product-card" data-category="adult" data-id="5">
+                    <div class="product-image">
+                        <div class="product-emoji">🫏</div>
+                        <span class="product-badge badge-popular">Хіт продажів</span>
+                        <div class="product-overlay">
+                            <button class="quick-view-btn" data-id="5">Швидкий перегляд</button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <span class="product-category">Дорослий • 8 років</span>
+                        <h3 class="product-name">Гектор</h3>
+                        <p class="product-description">Досвідчений робочий віслюк. Привчений до ваги та перевезення вантажів.</p>
+                        <div class="product-footer">
+                            <div class="product-price">
+                                <span class="price-current">₴28,000</span>
+                            </div>
+                            <button class="add-to-cart-btn" data-id="5" data-name="Гектор" data-price="28000">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 5v14M5 12h14"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="product-card" data-category="miniature" data-id="6">
+                    <div class="product-image">
+                        <div class="product-emoji">🫏</div>
+                        <span class="product-badge badge-new">Новинка</span>
+                        <div class="product-overlay">
+                            <button class="quick-view-btn" data-id="6">Швидкий перегляд</button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <span class="product-category">Мініатюрний • 2 роки</span>
+                        <h3 class="product-name">Клевер</h3>
+                        <p class="product-description">Чарівний мініатюрний віслюк з плямистим забарвленням. Дуже фотогенічний!</p>
+                        <div class="product-footer">
+                            <div class="product-price">
+                                <span class="price-current">₴23,000</span>
+                            </div>
+                            <button class="add-to-cart-btn" data-id="6" data-name="Клевер" data-price="23000">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 5v14M5 12h14"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </article>
+            </div>
+
+            <div class="catalog-cta">
+                <a href="#contact" class="btn btn-outline">
+                    Не знайшли потрібного? Зв'яжіться з нами
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Про нас -->
+    <section class="about" id="about">
+        <div class="container about-container">
+            <div class="about-image">
+                <div class="about-image-wrapper">
+                    <div class="about-emoji">🫏❤️</div>
+                </div>
+                <div class="about-experience">
+                    <span class="experience-number">15+</span>
+                    <span class="experience-text">років досвіду</span>
+                </div>
+            </div>
+            <div class="about-content">
+                <span class="section-badge">Про нас</span>
+                <h2 class="section-title">Любов до віслюків — <span class="highlight">наша місія</span></h2>
+                <p class="about-text">Donkey Paradise — це сімейна ферма, що спеціалізується на розведенні та продажу віслюків вже понад 15 років. Ми почали з двох віслюків і виросли до однієї з найбільших ферм в Україні.</p>
+                <p class="about-text">Кожна наша тварина отримує найкращий догляд: збалансоване харчування, регулярні ветеринарні огляди та багато любові. Ми не просто продаємо віслюків — ми знаходимо їм люблячі родини.</p>
+                
+                <div class="about-features">
+                    <div class="feature">
+                        <div class="feature-icon">🏥</div>
+                        <div class="feature-text">
+                            <h4>Ветеринарний супровід</h4>
+                            <p>Повний пакет документів та щеплень</p>
+                        </div>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">🚚</div>
+                        <div class="feature-text">
+                            <h4>Доставка по Україні</h4>
+                            <p>Безпечне транспортування</p>
+                        </div>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">📞</div>
+                        <div class="feature-text">
+                            <h4>Консультації 24/7</h4>
+                            <p>Допомога після покупки</p>
+                        </div>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">✅</div>
+                        <div class="feature-text">
+                            <h4>Гарантія здоров'я</h4>
+                            <p>30 днів гарантії на здоров'я</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Послуги -->
+    <section class="services" id="services">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-badge">Наші послуги</span>
+                <h2 class="section-title">Повний <span class="highlight">спектр послуг</span></h2>
+                <p class="section-description">Ми пропонуємо не лише продаж віслюків, а й комплексні послуги з догляду</p>
+            </div>
+
+            <div class="services-grid">
+                <div class="service-card">
+                    <div class="service-icon">🫏</div>
+                    <h3 class="service-title">Продаж віслюків</h3>
+                    <p class="service-description">Широкий вибір віслюків різного віку, розміру та характеру. Допоможемо обрати ідеального компаньйона.</p>
+                    <span class="service-price">від ₴10,000</span>
+                </div>
+
+                <div class="service-card">
+                    <div class="service-icon">🚗</div>
+                    <h3 class="service-title">Доставка</h3>
+                    <p class="service-description">Безпечне транспортування віслюків по всій Україні у спеціально обладнаних причепах.</p>
+                    <span class="service-price">від ₴2,000</span>
+                </div>
+
+                <div class="service-card">
+                    <div class="service-icon">💉</div>
+                    <h3 class="service-title">Ветеринарія</h3>
+                    <p class="service-description">Повний ветеринарний супровід: щеплення, огляди, консультації та лікування.</p>
+                    <span class="service-price">від ₴500</span>
+                </div>
+
+                <div class="service-card">
+                    <div class="service-icon">📚</div>
+                    <h3 class="service-title">Навчання</h3>
+                    <p class="service-description">Курси з догляду за віслюками для початківців. Практичні заняття на нашій фермі.</p>
+                    <span class="service-price">від ₴1,500</span>
+                </div>
+
+                <div class="service-card">
+                    <div class="service-icon">🏠</div>
+                    <h3 class="service-title">Передержка</h3>
+                    <p class="service-description">Тимчасове утримання вашого віслюка на нашій фермі з повним доглядом.</p>
+                    <span class="service-price">від ₴300/день</span>
+                </div>
+
+                <div class="service-card">
+                    <div class="service-icon">📸</div>
+                    <h3 class="service-title">Фотосесії</h3>
+                    <p class="service-description">Організація фотосесій з нашими віслюками для особистих та комерційних цілей.</p>
+                    <span class="service-price">від ₴2,500</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Відгуки -->
+    <section class="reviews" id="reviews">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-badge">Відгуки</span>
+                <h2 class="section-title">Що кажуть наші <span class="highlight">клієнти</span></h2>
+            </div>
+
+            <div class="reviews-slider" id="reviewsSlider">
+                <div class="reviews-track">
+                    <div class="review-card">
+                        <div class="review-header">
+                            <div class="review-avatar">ОП</div>
+                            <div class="review-info">
+                                <h4 class="review-name">Олександр Петренко</h4>
+                                <span class="review-location">м. Київ</span>
+                            </div>
+                        </div>
+                        <div class="review-stars">★★★★★</div>
+                        <p class="review-text">"Купили віслюка Марту для нашої ферми. Тварина чудова — спокійна, доглянута. Дуже вдячні за консультації та підтримку!"</p>
+                        <span class="review-date">15 березня 2025</span>
+                    </div>
+
+                    <div class="review-card">
+                        <div class="review-header">
+                            <div class="review-avatar">МК</div>
+                            <div class="review-info">
+                                <h4 class="review-name">Марія Коваленко</h4>
+                                <span class="review-location">м. Львів</span>
+                            </div>
+                        </div>
+                        <div class="review-stars">★★★★★</div>
+                        <p class="review-text">"Замовили мініатюрного віслюка для дітей. Діти в захваті! Дуже дякуємо за швидку доставку та всі документи."</p>
+                        <span class="review-date">22 лютого 2025</span>
+                    </div>
+
+                    <div class="review-card">
+                        <div class="review-header">
+                            <div class="review-avatar">ІС</div>
+                            <div class="review-info">
+                                <h4 class="review-name">Іван Сидоренко</h4>
+                                <span class="review-location">м. Одеса</span>
+                            </div>
+                        </div>
+                        <div class="review-stars">★★★★★</div>
+                        <p class="review-text">"Професійний підхід, чесні ціни. Віслюк Гектор став справжнім помічником у господарстві. Рекомендую!"</p>
+                        <span class="review-date">10 січня 2025</span>
+                    </div>
+                </div>
+
+                <div class="reviews-nav">
+                    <button class="review-nav-btn prev" id="reviewPrev">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M15 18l-6-6 6-6"/>
+                        </svg>
+                    </button>
+                    <button class="review-nav-btn next" id="reviewNext">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 18l6-6-6-6"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA секція -->
+    <section class="cta">
+        <div class="container cta-container">
+            <div class="cta-content">
+                <h2 class="cta-title">Готові знайти свого віслюка?</h2>
+                <p class="cta-text">Зателефонуйте нам або залиште заявку, і ми допоможемо обрати ідеального компаньйона</p>
+                <div class="cta-buttons">
+                    <a href="tel:+380991234567" class="btn btn-primary btn-large">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                        </svg>
+                        +38 (099) 123-45-67
+                    </a>
+                    <a href="#contact" class="btn btn-white">Залишити заявку</a>
+                </div>
+            </div>
+            <div class="cta-decoration">🫏</div>
+        </div>
+    </section>
+
+    <!-- Контакти -->
+    <section class="contact" id="contact">
+        <div class="container contact-container">
+            <div class="contact-info">
+                <span class="section-badge">Контакти</span>
+                <h2 class="section-title">Зв'яжіться <span class="highlight">з нами</span></h2>
+                <p class="contact-description">Маєте питання? Ми завжди раді допомогти!</p>
+                
+                <div class="contact-details">
+                    <div class="contact-item">
+                        <div class="contact-icon">📍</div>
+                        <div class="contact-text">
+                            <h4>Адреса</h4>
+                            <p>с. Веселе, Київська обл., вул. Фермерська, 42</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon">📞</div>
+                        <div class="contact-text">
+                            <h4>Телефон</h4>
+                            <p><a href="tel:+380991234567">+38 (099) 123-45-67</a></p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon">✉️</div>
+                        <div class="contact-text">
+                            <h4>Email</h4>
+                            <p><a href="mailto:info@donkey-paradise.ua">info@donkey-paradise.ua</a></p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon">🕐</div>
+                        <div class="contact-text">
+                            <h4>Графік роботи</h4>
+                            <p>Пн-Нд: 9:00 - 18:00</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="social-links">
+                    <a href="#" class="social-link" aria-label="Facebook">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+                        </svg>
+                    </a>
+                    <a href="#" class="social-link" aria-label="Instagram">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+                        </svg>
+                    </a>
+                    <a href="#" class="social-link" aria-label="Telegram">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+
+            <div class="contact-form-wrapper">
+                <form class="contact-form" id="contactForm">
+                    <h3 class="form-title">Залишити заявку</h3>
+                    <div class="form-group">
+                        <label for="name">Ваше ім'я *</label>
+                        <input type="text" id="name" name="name" required placeholder="Введіть ваше ім'я">
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Телефон *</label>
+                        <input type="tel" id="phone" name="phone" required placeholder="+38 (0__) ___-__-__">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" placeholder="your@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="message">Повідомлення</label>
+                        <textarea id="message" name="message" rows="4" placeholder="Розкажіть, що вас цікавить..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">
+                        <span>Надіслати заявку</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Футер -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <a href="#" class="logo">
+                        <span class="logo-icon">🫏</span>
+                        <span class="logo-text">Donkey Paradise</span>
+                    </a>
+                    <p class="footer-description">Найкращі віслюки України з 2010 року. Здоров'я, якість та любов до тварин — наші головні цінності.</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Навігація</h4>
+                    <ul>
+                        <li><a href="#home">Головна</a></li>
+                        <li><a href="#catalog">Каталог</a></li>
+                        <li><a href="#about">Про нас</a></li>
+                        <li><a href="#services">Послуги</a></li>
+                        <li><a href="#contact">Контакти</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Послуги</h4>
+                    <ul>
+                        <li><a href="#services">Продаж віслюків</a></li>
+                        <li><a href="#services">Доставка</a></li>
+                        <li><a href="#services">Ветеринарія</a></li>
+                        <li><a href="#services">Навчання</a></li>
+                    </ul>
+                </div>
+                <div class="footer-newsletter">
+                    <h4>Підписка на новини</h4>
+                    <p>Отримуйте новини про нових віслюків та акції</p>
+                    <form class="newsletter-form" id="newsletterForm">
+                        <input type="email" placeholder="Ваш email" required>
+                        <button type="submit">→</button>
+                    </form>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Donkey Paradise. Всі права захищено.</p>
+                <p>Зроблено з ❤️ для любителів віслюків</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Модальне вікно кошика -->
+    <div class="modal" id="cartModal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content cart-modal">
+            <button class="modal-close" id="cartClose">&times;</button>
+            <h2 class="modal-title">🛒 Ваш кошик</h2>
+            <div class="cart-items" id="cartItems">
+                <!-- Товари будуть додаватися через JS -->
+            </div>
+            <div class="cart-total">
+                <span>Разом:</span>
+                <span class="total-price" id="totalPrice">₴0</span>
+            </div>
+            <button class="btn btn-primary btn-full" id="checkoutBtn">Оформити замовлення</button>
+        </div>
+    </div>
+
+    <!-- Toast повідомлення -->
+    <div class="toast" id="toast">
+        <span class="toast-icon">✓</span>
+        <span class="toast-message" id="toastMessage">Товар додано до кошика</span>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
