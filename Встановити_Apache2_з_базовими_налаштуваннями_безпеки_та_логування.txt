@@ -1,0 +1,116 @@
+
+sudo apt update
+sudo apt install -y apache2 openssl
+sudo systemctl enable --now apache2
+sudo a2enmod ssl headers
+sudo systemctl reload apache2
+echo "ServerName site1.local" | sudo tee /etc/apache2/conf-available/servername.conf >/dev/null
+sudo a2enconf servername
+sudo systemctl reload apache2
+sudo tee /etc/apache2/conf-available/security-hardening.conf >/dev/null <<'EOF'
+ServerTokens Prod
+ServerSignature Off
+TraceEnable Off
+Header always set X-Content-Type-Options "nosniff"
+EOF
+sudo a2enconf security-hardening
+sudo systemctl reload apache2
+sudo mkdir -p /var/www/site1/public_html /var/www/site2/public_html
+sudo chown -R www-data:www-data /var/www/site1 /var/www/site2
+sudo chmod -R 750 /var/www/site1 /var/www/site2
+echo "<h1>Site 1 HTTPS</h1>" | sudo tee /var/www/site1/public_html/index.html >/dev/null
+echo "<h1>Site 2 HTTPS</h1>" | sudo tee /var/www/site2/public_html/index.html >/dev/null
+sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+-keyout /etc/ssl/private/site1.key \
+-out /etc/ssl/certs/site1.crt \
+-subj "/C=UA/L=Kyiv/O=Lab/CN=site1.local"
+sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+-keyout /etc/ssl/private/site2.key \
+-out /etc/ssl/certs/site2.crt \
+-subj "/C=UA/L=Kyiv/O=Lab/CN=site2.local"
+
+sudo chmod 600 /etc/ssl/private/site1.key /etc/ssl/private/site2.key
+sudo chown root:root /etc/ssl/private/site1.key /etc/ssl/private/site2.key
+
+sudo tee /etc/apache2/sites-available/site1-ssl.conf >/dev/null <<'EOF'
+<VirtualHost *:443>
+    ServerName site1.local
+    DocumentRoot /var/www/site1/public_html
+
+    SSLEngine on
+    SSLCertificateFile /etc/ssl/certs/site1.crt
+    SSLCertificateKeyFile /etc/ssl/private/site1.key
+
+    <Directory /var/www/site1/public_html>
+        AllowOverride None
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/site1_error.log
+    CustomLog ${APACHE_LOG_DIR}/site1_access.log combined
+</VirtualHost>
+EOF
+
+sudo tee /etc/apache2/sites-available/site2-ssl.conf >/dev/null <<'EOF'
+<VirtualHost *:443>
+    ServerName site2.local
+    DocumentRoot /var/www/site2/public_html
+
+    SSLEngine on
+    SSLCertificateFile /etc/ssl/certs/site2.crt
+    SSLCertificateKeyFile /etc/ssl/private/site2.key
+
+    <Directory /var/www/site2/public_html>
+        AllowOverride None
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/site2_error.log
+    CustomLog ${APACHE_LOG_DIR}/site2_access.log combined
+</VirtualHost>
+EOF
+
+# 7) HTTP → HTTPS (окремо для кожного домену)
+sudo tee /etc/apache2/sites-available/site1.conf >/dev/null <<'EOF'
+<VirtualHost *:80>
+    ServerName site1.local
+    ServerAlias www.site1.local
+    Redirect permanent / https://site1.local/
+    ErrorLog ${APACHE_LOG_DIR}/site1_http_error.log
+    CustomLog ${APACHE_LOG_DIR}/site1_http_access.log combined
+</VirtualHost>
+EOF
+
+sudo tee /etc/apache2/sites-available/site2.conf >/dev/null <<'EOF'
+<VirtualHost *:80>
+    ServerName site2.local
+    ServerAlias www.site2.local
+    Redirect permanent / https://site2.local/
+    ErrorLog ${APACHE_LOG_DIR}/site2_http_error.log
+    CustomLog ${APACHE_LOG_DIR}/site2_http_access.log combined
+</VirtualHost>
+EOF
+
+# 8) Увімкнути сайти, вимкнути дефолтні
+sudo a2ensite site1.conf site2.conf site1-ssl.conf site2-ssl.conf
+sudo a2dissite 000-default.conf 2>/dev/null || true
+sudo a2dissite default-ssl.conf 2>/dev/null || true
+
+# 9) Перевірка і застосування
+sudo apache2ctl configtest
+sudo systemctl reload apache2
+
+# 10) Перевірки для звіту
+sudo apache2ctl -S
+
+curl -I http://site1.local
+curl -kI https://site1.local
+curl -I http://site2.local
+curl -kI https://site2.local
+
+sudo nano /etc/hosts
+192.168.0.139   site1.local www.site1.local
+192.168.0.139   site2.local www.site2.local
+
+openssl s_client -connect 127.0.0.1:443 -servername site1.local </dev/null 2>/dev/null | openssl x509 -noout -subject -issuer -dates
+openssl s_client -connect 127.0.0.1:443 -servername site2.local </dev/null 2>/dev/null | openssl x509 -noout -subject -issuer -dates

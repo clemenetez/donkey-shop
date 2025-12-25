@@ -1,0 +1,271 @@
+1
+
+
+
+# Встановлення необхідних пакетів
+apt install libpam-pwquality -y  # модуль перевірки складності паролів
+
+# Налаштування pam_pwquality (складність пароля)
+echo "minlen=8 ucredit=-1 dcredit=-1" > /etc/security/pwquality.conf  # мін 8 символів, 1 велика літера, 1 цифра
+
+# Заборона повторного використання 3 останніх паролів
+sed -i '/pam_unix.so/s/$/ remember=3/' /etc/pam.d/common-password  # зберігати 3 останні паролі
+
+# Блокування після 3 невдалих спроб на 5 хвилин
+echo "auth required pam_faillock.so deny=3 unlock_time=300" >> /etc/pam.d/common-auth  # 3 спроби, 300 сек блокування
+
+# Створення user666 з максимальними привілеями
+useradd -m user666  # створення користувача
+echo "user666:password" | chpasswd  # встановлення пароля
+usermod -aG sudo user666  # додавання в групу sudo
+
+# Заборона входу user666 з консолі через pam_securetty
+echo "auth required pam_securetty.so" >> /etc/pam.d/login  # активація pam_securetty
+echo "" > /etc/securetty  # очистити список дозволених терміналів (заборона консолі)
+
+# Створення user13
+useradd -m user13  # створення користувача
+echo "user13:password" | chpasswd  # встановлення пароля
+
+# Обмеження student по часу (8:00-18:00) через pam_time
+echo "account required pam_time.so" >> /etc/pam.d/common-account  # активація pam_time
+echo "*;*;student;Al0800-1800" >> /etc/security/time.conf  # дозвіл входу тільки 8:00-18:00
+
+# Налаштування повідомлення дня (MOTD)
+echo "auth optional pam_motd.so" >> /etc/pam.d/login  # активація pam_motd
+echo "Ласкаво просимо до системи!" > /etc/motd  # текст повідомлення
+
+
+
+2
+
+
+
+
+```bash
+# Встановлення Google Authenticator для 2FA
+apt install libpam-google-authenticator -y  # модуль двофакторної автентифікації
+
+useradd -m user13  # потрібно додати перед налаштуванням 2FA
+echo "user13:password" | chpasswd
+
+# Налаштування 2FA для консолі
+echo "auth required pam_google_authenticator.so" >> /etc/pam.d/login  # 2FA для консольного входу
+
+# Налаштування 2FA для SSH
+echo "auth required pam_google_authenticator.so" >> /etc/pam.d/sshd  # 2FA для SSH
+sed -i 's/ChallengeResponseAuthentication no/ChallengeResponseAuthentication yes/' /etc/ssh/sshd_config  # увімкнути challenge-response
+systemctl restart sshd  # перезапуск SSH
+
+# Ініціалізація 2FA для користувача (виконати від імені користувача)
+su - user13 -c "google-authenticator -t -d -f -r 3 -R 30 -w 3"  # генерація ключа без запитань
+
+# Перенесення домашньої директорії user13 в /test/user
+mkdir -p /test/user  # створення нової директорії
+cp -a /home/user13/. /test/user/  # копіювання файлів зі збереженням прав
+usermod -d /test/user user13  # зміна домашньої директорії
+chown -R user13:user13 /test/user  # встановлення власника
+
+# Зробити /test/user кореневою для user13 (chroot)
+usermod -s /bin/bash user13  # переконатися що shell встановлено
+echo "user13" >> /etc/security/chroot.conf  # додати користувача для chroot
+echo "session required pam_chroot.so" >> /etc/pam.d/common-session  # активація pam_chroot
+
+# Показати існуючі типи namespaces
+lsns  # список всіх активних namespaces у системі
+ls -la /proc/self/ns/  # типи namespaces доступні в системі
+
+# Запуск htop з власним UTS-простором
+apt install htop -y  # встановлення htop
+unshare --uts htop  # запуск htop в ізольованому UTS namespace
+
+
+
+
+
+3
+
+
+
+# Показати поточні обмеження системи
+ulimit -a  # всі м'які обмеження
+ulimit -Ha  # всі жорсткі обмеження
+
+# Встановити м'яке обмеження на 50 відкритих файлів
+ulimit -Sn 50  # м'яке обмеження відкритих файлів
+
+# Перевірка обмеження відкритих файлів
+ulimit -n  # показати поточне обмеження
+head /dev/zero > /dev/null & for i in $(seq 1 60); do exec 3>/tmp/f$i; done  # спроба відкрити 60 файлів (помилка)
+
+# Встановити обмеження розміру файлу 1 КБ
+ulimit -f 1  # обмеження розміру файлу в блоках (512 байт * 1 = 512 байт, або 2 для 1КБ)
+ulimit -f 2  # 2 блоки = 1024 байт = 1 КБ
+
+# Спроба створити файл більше 1 КБ
+dd if=/dev/zero of=/tmp/bigfile bs=2048 count=1  # спроба створити 2КБ файл (помилка: File size limit exceeded)
+
+# Встановити обмеження CPU 5 секунд
+ulimit -t 5  # обмеження часу CPU в секундах
+
+# Запуск нескінченного циклу (завершиться через 5 сек)
+while true; do :; done  # нескінченний цикл (отримає SIGKILL через 5 сек)
+
+# Встановити жорстке обмеження на 5 процесів
+ulimit -Hu 5  # жорстке обмеження кількості процесів
+
+# Спроба запустити 6 фонових процесів
+for i in $(seq 1 6); do sleep 100 & done  # 6-й процес не запуститься (fork: Resource temporarily unavailable)
+
+# Запуск оболонки з ізольованими точками монтування
+unshare --mount /bin/bash  # нова оболонка з ізольованим mount namespace
+
+# Створення тимчасової директорії та монтування (виконувати в новій оболонці)
+mkdir -p /tmp/isolated_mount  # створення директорії
+mount -t tmpfs tmpfs /tmp/isolated_mount  # монтування tmpfs
+df -h /tmp/isolated_mount  # перевірка монтування
+
+
+
+4
+
+
+
+# замінити фіксований UID на динамічний
+auditctl -a always,exit -F arch=b64 -S all -F uid=$(id -u) -k user_syscalls
+```bash
+# Налаштування syslog для журналювання авторизації
+echo "auth,authpriv.* /var/log/auth" >> /etc/rsyslog.conf  # всі події авторизації в /var/log/auth
+touch /var/log/auth  # створення файлу журналу
+systemctl restart rsyslog  # перезапуск syslog
+
+# Зміна ротації журналів на щоденну з 7 копіями
+sed -i 's/weekly/daily/' /etc/logrotate.conf  # щоденна ротація
+sed -i 's/rotate 4/rotate 7/' /etc/logrotate.conf  # зберігати 7 журналів
+
+# Встановлення auditd
+apt install auditd audispd-plugins -y  # інструменти аудиту
+
+# Створення тестового файлу для аудиту
+touch /tmp/testfile  # файл для відслідковування
+
+# Правила аудиту для файлу (читання, запис, виконання, зміна атрибутів)
+auditctl -w /tmp/testfile -p rwxa -k testfile_audit  # r-read w-write x-execute a-attribute
+
+# Отримання поточного UID
+id -u  # показати UID поточного користувача
+
+# Правило для системних викликів від користувача з UID (замінити 1000 на свій UID)
+auditctl -a always,exit -F arch=b64 -S all -F uid=1000 -k user_syscalls  # всі syscalls від UID 1000
+
+# Правило для відслідковування rmdir()
+auditctl -a always,exit -F arch=b64 -S rmdir -k rmdir_audit  # відслідковування rmdir
+
+# Перевірка правил аудиту
+auditctl -l  # список активних правил
+
+# Встановлення mc
+apt install mc -y  # файловий менеджер
+
+# Відслідковування процесу mc (системні виклики і файли)
+strace -f -o /tmp/mc_trace.log mc  # запис всіх syscalls mc у файл
+cat /tmp/mc_trace.log | head -50  # перегляд перших 50 рядків
+
+# Виконання rmdir для тесту аудиту
+mkdir /tmp/testdir  # створення директорії
+rmdir /tmp/testdir  # видалення (спрацює правило аудиту)
+
+# Перегляд журналу аудиту
+ausearch -k rmdir_audit  # пошук подій rmdir
+ausearch -k testfile_audit  # пошук подій файлу
+
+# Передача виводу в aureport
+ausearch -k rmdir_audit --raw | aureport -f -i  # звіт по файлах
+aureport --summary  # загальний звіт аудиту
+aureport --syscall  # звіт по системних викликах
+aureport --auth  # звіт по авторизації
+
+# Пояснення виводу aureport:
+# --summary: загальна статистика подій (кількість подій, успішних/невдалих)
+# --syscall: список системних викликів з кількістю та результатом
+# --file/-f: звіт по доступу до файлів (шлях, тип доступу, користувач)
+# --auth: події автентифікації (вхід, sudo, su)
+```
+
+
+
+
+
+5
+
+
+
+
+
+useradd -m user666  # потрібно додати перед SELinux налаштуванням
+echo "user666:password" | chpasswd
+
+```bash
+# Встановлення SELinux на Debian
+apt install selinux-basics selinux-policy-default auditd -y  # базові пакети SELinux
+
+# Активація SELinux
+selinux-activate  # активація SELinux (потребує перезавантаження)
+reboot  # перезавантаження системи
+
+# Після перезавантаження - перевірка статусу
+sestatus  # перевірка стану SELinux
+setenforce 1  # примусовий режим (enforcing)
+
+# Створення тестового файлу
+touch /tmp/secretfile  # створення файлу
+echo "secret content" > /tmp/secretfile  # додавання вмісту
+
+# Встановлення пакету для керування політиками
+apt install policycoreutils selinux-utils -y  # утиліти SELinux
+
+# Створення модуля політики для обмеження доступу
+cat > /tmp/denyroot.te << 'EOF'
+policy_module(denyroot, 1.0)
+require {
+    type unconfined_t;
+    type user_home_t;
+    class file { read write open };
+}
+type secretfile_t;
+allow user_t secretfile_t:file { read write open getattr };
+neverallow unconfined_t secretfile_t:file { read write open };
+EOF
+
+# Компіляція та встановлення модуля
+checkmodule -M -m -o /tmp/denyroot.mod /tmp/denyroot.te  # компіляція
+semodule_package -o /tmp/denyroot.pp -m /tmp/denyroot.mod  # пакування
+semodule -i /tmp/denyroot.pp  # встановлення модуля
+
+# Встановлення контексту файлу
+semanage fcontext -a -t secretfile_t "/tmp/secretfile"  # призначення типу
+restorecon -v /tmp/secretfile  # застосування контексту
+
+# Налаштування контексту для user666
+semanage login -a -s user_u user666  # призначення SELinux користувача
+
+# Перевірка контексту файлу
+ls -Z /tmp/secretfile  # показати SELinux контекст
+
+# Тестування доступу
+su - root -c "cat /tmp/secretfile"  # root - заборонено
+su - user666 -c "cat /tmp/secretfile"  # user666 - дозволено
+
+# Перегляд відмов в журналі
+ausearch -m avc -ts recent  # пошук відмов SELinux
+```
+
+
+
+
+
+
+
+
+
+

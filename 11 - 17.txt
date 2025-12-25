@@ -1,0 +1,1216 @@
+11
+
+
+
+# Встановлення YARA
+apt install yara -y  # інструмент для виявлення файлів
+
+# Створення файлу з правилами YARA
+cat > /home/user/detect_rules.yar << 'EOF'
+rule Obfuscated_Library {
+    meta:
+        description = "Виявлення обфускованих бібліотек"
+    strings:
+        $elf = { 7F 45 4C 46 }  // ELF header
+        $so = ".so"
+        $packed1 = "UPX!"  // UPX packer
+        $packed2 = { 55 50 58 21 }  // UPX signature
+        $suspicious1 = /[A-Za-z0-9+\/]{50,}={0,2}/  // base64 strings
+        $suspicious2 = { 00 00 00 00 00 00 00 00 00 00 }  // null padding
+    condition:
+        $elf at 0 and $so and (any of ($packed*) or any of ($suspicious*))
+}
+
+rule Console_Executable {
+    meta:
+        description = "Виявлення консольних виконуваних файлів"
+    strings:
+        $elf = { 7F 45 4C 46 }  // ELF magic bytes
+        $exec = { 02 00 }  // ET_EXEC type
+        $dyn = { 03 00 }  // ET_DYN type
+        $interp = "/lib64/ld-linux"  // dynamic linker
+        $interp2 = "/lib/ld-linux"  // 32-bit linker
+    condition:
+        $elf at 0 and ($exec at 16 or $dyn at 16) and any of ($interp*)
+}
+
+rule JPG_Image {
+    meta:
+        description = "Виявлення JPG файлів"
+    strings:
+        $jpg_magic1 = { FF D8 FF E0 }  // JFIF
+        $jpg_magic2 = { FF D8 FF E1 }  // EXIF
+        $jpg_magic3 = { FF D8 FF DB }  // RAW
+        $jpg_end = { FF D9 }  // JPG footer
+    condition:
+        any of ($jpg_magic*) at 0 and $jpg_end
+}
+
+rule SVG_Image {
+    meta:
+        description = "Виявлення SVG файлів"
+    strings:
+        $xml = "<?xml"
+        $svg1 = "<svg"
+        $svg2 = "xmlns=\"http://www.w3.org/2000/svg\""
+        $svg3 = "xmlns='http://www.w3.org/2000/svg'"
+    condition:
+        ($xml at 0 or $svg1 in (0..100)) and any of ($svg2, $svg3)
+}
+
+rule MKV_Video {
+    meta:
+        description = "Виявлення MKV файлів"
+    strings:
+        $mkv_magic = { 1A 45 DF A3 }  // EBML header
+        $matroska = "matroska"
+        $webm = "webm"
+    condition:
+        $mkv_magic at 0 and ($matroska or $webm)
+}
+
+rule Obfuscated_Executable {
+    meta:
+        description = "Виявлення обфускованих виконуваних файлів"
+    strings:
+        $elf = { 7F 45 4C 46 }  // ELF header
+        $upx = "UPX!"
+        $high_entropy = /[\x80-\xFF]{100,}/  // high entropy bytes
+        $xor_loop = { 31 ?? 83 ?? 01 }  // XOR decode pattern
+        $encrypted = { 00 00 00 00 [10-50] FF FF FF FF }  // encrypted sections
+    condition:
+        $elf at 0 and any of ($upx, $high_entropy, $xor_loop, $encrypted)
+}
+EOF
+
+# Перевірка синтаксису правил
+yara -w /home/user/detect_rules.yar  # валідація правил
+
+# Сканування директорії з файлами
+yara /home/user/detect_rules.yar /path/to/scan/ -r  # рекурсивне сканування
+
+# Сканування окремого файлу
+yara /home/user/detect_rules.yar /path/to/file  # сканування файлу
+
+# Сканування з виводом назви правила та файлу
+yara -s /home/user/detect_rules.yar /path/to/scan/ -r  # з виводом строк що співпали
+
+# Приклади тестування
+yara /home/user/detect_rules.yar /usr/lib/ -r  # сканування бібліотек
+yara /home/user/detect_rules.yar /usr/bin/ -r  # сканування виконуваних файлів
+yara /home/user/detect_rules.yar ~/Pictures/ -r  # сканування зображень
+
+
+
+
+12
+
+
+
+# Підготовка середовища для аналізу
+Зробити snapshot VM  # точка відновлення перед запуском
+
+# Запуск Process Monitor
+procmon.exe → File → Capture Events (Ctrl+E)  # почати захоплення
+→ Filter → Filter... → Process Name contains "kms" → Add  # фільтр по KMS
+→ Filter → Process Name contains "OSPPSVC" → Add  # служба ліцензування Office
+→ Filter → Process Name contains "cmd" → Add  # командний рядок
+
+# Запуск Process Explorer
+procexp.exe → View → Show Lower Pane (Ctrl+L)  # показати деталі процесу
+→ Options → Verify Image Signatures  # перевірка підписів
+
+# Запуск Autoruns (для відстеження автозапуску)
+autoruns.exe → Options → Scan Options → ✓ Verify code signatures  # перевірка підписів
+→ Зробити snapshot: File → Save  # зберегти стан до запуску
+
+# Запуск TCPView (мережева активність)
+tcpview.exe  # моніторинг мережевих з'єднань
+
+# Запуск RegShot (зміни реєстру)
+regshot.exe → 1st shot  # перший знімок реєстру
+
+# Запуск KMS-активатора
+ПКМ → Run as Administrator  # запуск з правами адміна
+
+# Аналіз Process Monitor - типові дії KMS
+Фільтр: Operation → WriteFile  # записані файли
+→ C:\Windows\System32\SppExtComObjHook.dll  # підміна бібліотеки
+→ C:\Windows\System32\SppExtComObjPatcher.exe  # патчер служби
+
+Фільтр: Operation → RegSetValue  # зміни реєстру
+→ HKLM\SOFTWARE\Microsoft\Office\ClickToRun\Configuration  # налаштування Office
+→ HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SoftwareProtectionPlatform  # ліцензування
+
+Фільтр: Operation → Process Create  # створені процеси
+→ cmd.exe /c ...  # командний рядок
+→ cscript.exe ospp.vbs  # скрипт активації Office
+
+# Аналіз Task Manager
+Ctrl+Shift+Esc → Details tab  # вкладка деталі
+→ Спостерігати за: KMS*.exe, OSPPSVC.exe, sppsvc.exe  # процеси активації
+→ ПКМ → Open file location  # розташування файлу
+→ ПКМ → Properties → Digital Signatures  # перевірка підпису
+
+# Мережева активність (TCPView)
+Local Address: 0.0.0.0:1688  # локальний KMS сервер
+Remote Address: 127.0.0.1:1688  # підключення до себе
+State: LISTENING / ESTABLISHED  # стан з'єднання
+
+# Аналіз RegShot
+regshot.exe → 2nd shot → Compare  # порівняння реєстру
+Типові зміни:
+→ HKLM\SOFTWARE\Microsoft\OfficeSoftwareProtectionPlatform  # платформа захисту
+→ HKLM\SYSTEM\CurrentControlSet\Services\KMSEmulator  # служба емулятора
+
+# Аналіз Autoruns після активації
+autoruns.exe → File → Compare... → вибрати попередній snapshot  # порівняння
+Нові записи (жовті):
+→ Task Scheduler: \Microsoft\Office\KMS_Reactivation  # завдання реактивації
+→ Services: KMSEmulator  # служба емулятора
+
+# Аналіз створених файлів (cmd)
+dir C:\Windows\System32\Spp* /s  # файли Spp
+dir C:\Windows\System32\*kms* /s  # файли KMS
+dir C:\ProgramData\Microsoft\Office\  # дані Office
+
+# Аналіз служб
+services.msc → Знайти нові служби  # перевірка служб
+sc query KMSEmulator  # статус служби емулятора
+
+# Аналіз запланованих завдань
+taskschd.msc → Task Scheduler Library → Microsoft → Office  # завдання Office
+→ KMS_Reactivation → Properties → Actions  # дії завдання
+
+# Документування результатів
+procmon.exe → File → Save... → kms_analysis.pml  # збереження логу
+procexp.exe → File → Save As... → processes.txt  # збереження процесів
+
+# Типові артефакти KMS-активатора
+# Файли:
+C:\Windows\System32\SppExtComObjHook.dll  # hook бібліотека
+C:\Windows\System32\SppExtComObjPatcher.exe  # патчер
+C:\Windows\AutoKMS\  # директорія активатора
+
+# Реєстр:
+HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SoftwareProtectionPlatform\SkipRearm  # пропуск перевірки
+HKLM\SOFTWARE\Microsoft\Office\*\Registration  # дані реєстрації
+
+# Мережа:
+127.0.0.1:1688  # локальний KMS емулятор
+Порт 1688 TCP  # стандартний порт KMS
+
+# Служби:
+sppsvc (Software Protection)  # служба захисту
+osppsvc (Office Software Protection)  # захист Office
+KMSEmulator  # емулятор KMS сервера
+
+# Заплановані завдання:
+AutoKMS  # автоматична реактивація
+Office_KMS_Reactivation  # реактивація кожні 180 днів
+
+
+
+
+13
+
+
+
+# Встановлення Bind9
+apt install bind9 bind9utils bind9-doc -y  # DNS сервер та утиліти
+
+# Резервне копіювання конфігурації
+cp /etc/bind/named.conf.options /etc/bind/named.conf.options.bak  # бекап
+
+# Налаштування ACL та безпеки
+cat > /etc/bind/named.conf.options << 'EOF'
+acl "trusted" {
+    192.168.1.0/24;  // довірена мережа
+    localhost;
+    localnets;
+};
+
+options {
+    directory "/var/cache/bind";
+    
+    // Безпека
+    recursion yes;
+    allow-recursion { trusted; };
+    allow-query { trusted; };
+    allow-transfer { none; };
+    
+    // Приховати версію
+    version "DNS Server";
+    
+    // DNSSEC
+    dnssec-validation auto;
+    
+    // Слухати на інтерфейсах
+    listen-on { 127.0.0.1; 192.168.1.10; };
+    listen-on-v6 { none; };
+    
+    // Форвардери
+    forwarders { 8.8.8.8; 8.8.4.4; };
+};
+
+// Логування
+logging {
+    channel default_log {
+        file "/var/log/bind/default.log" versions 3 size 5m;
+        severity info;
+        print-time yes;
+        print-severity yes;
+        print-category yes;
+    };
+    channel query_log {
+        file "/var/log/bind/query.log" versions 3 size 10m;
+        severity dynamic;
+        print-time yes;
+    };
+    channel security_log {
+        file "/var/log/bind/security.log" versions 3 size 5m;
+        severity warning;
+        print-time yes;
+    };
+    category default { default_log; };
+    category queries { query_log; };
+    category security { security_log; };
+};
+EOF
+
+# Створення директорії для логів
+mkdir -p /var/log/bind  # директорія логів
+chown bind:bind /var/log/bind  # права для bind
+
+# Налаштування зон
+cat > /etc/bind/named.conf.local << 'EOF'
+// Пряма зона
+zone "mydomain.local" {
+    type master;
+    file "/etc/bind/zones/db.mydomain.local";
+    allow-update { none; };
+};
+
+// Зворотня зона
+zone "1.168.192.in-addr.arpa" {
+    type master;
+    file "/etc/bind/zones/db.192.168.1";
+    allow-update { none; };
+};
+
+// Субдомен
+zone "sub.mydomain.local" {
+    type master;
+    file "/etc/bind/zones/db.sub.mydomain.local";
+    allow-update { none; };
+};
+EOF
+
+# Створення директорії для зон
+mkdir -p /etc/bind/zones  # директорія зон
+
+# Пряма зона з усіма записами
+cat > /etc/bind/zones/db.mydomain.local << 'EOF'
+$TTL    604800
+@       IN      SOA     ns1.mydomain.local. admin.mydomain.local. (
+                        2024010101  ; Serial
+                        604800      ; Refresh
+                        86400       ; Retry
+                        2419200     ; Expire
+                        604800 )    ; Negative Cache TTL
+
+; NS записи
+@       IN      NS      ns1.mydomain.local.
+@       IN      NS      ns2.mydomain.local.
+
+; A записи
+@       IN      A       192.168.1.10
+ns1     IN      A       192.168.1.10
+ns2     IN      A       192.168.1.11
+www     IN      A       192.168.1.20
+mail    IN      A       192.168.1.30
+ftp     IN      A       192.168.1.40
+
+; MX запис
+@       IN      MX      10 mail.mydomain.local.
+@       IN      MX      20 mail2.mydomain.local.
+mail2   IN      A       192.168.1.31
+
+; CNAME записи
+webmail IN      CNAME   mail.mydomain.local.
+docs    IN      CNAME   www.mydomain.local.
+
+; TXT записи
+@       IN      TXT     "v=spf1 mx a ip4:192.168.1.0/24 -all"
+_dmarc  IN      TXT     "v=DMARC1; p=quarantine; rua=mailto:admin@mydomain.local"
+
+; SRV записи
+_ldap._tcp      IN      SRV     0 0 389 ldap.mydomain.local.
+_kerberos._tcp  IN      SRV     0 0 88 kdc.mydomain.local.
+_sip._tcp       IN      SRV     10 5 5060 sip.mydomain.local.
+ldap    IN      A       192.168.1.50
+kdc     IN      A       192.168.1.51
+sip     IN      A       192.168.1.52
+
+; Делегування субдомену
+sub     IN      NS      ns1.mydomain.local.
+EOF
+
+# Зворотня зона
+cat > /etc/bind/zones/db.192.168.1 << 'EOF'
+$TTL    604800
+@       IN      SOA     ns1.mydomain.local. admin.mydomain.local. (
+                        2024010101  ; Serial
+                        604800      ; Refresh
+                        86400       ; Retry
+                        2419200     ; Expire
+                        604800 )    ; Negative Cache TTL
+
+; NS записи
+@       IN      NS      ns1.mydomain.local.
+@       IN      NS      ns2.mydomain.local.
+
+; PTR записи
+10      IN      PTR     ns1.mydomain.local.
+11      IN      PTR     ns2.mydomain.local.
+20      IN      PTR     www.mydomain.local.
+30      IN      PTR     mail.mydomain.local.
+31      IN      PTR     mail2.mydomain.local.
+40      IN      PTR     ftp.mydomain.local.
+50      IN      PTR     ldap.mydomain.local.
+51      IN      PTR     kdc.mydomain.local.
+52      IN      PTR     sip.mydomain.local.
+EOF
+
+# Субдомен
+cat > /etc/bind/zones/db.sub.mydomain.local << 'EOF'
+$TTL    604800
+@       IN      SOA     ns1.mydomain.local. admin.mydomain.local. (
+                        2024010101  ; Serial
+                        604800      ; Refresh
+                        86400       ; Retry
+                        2419200     ; Expire
+                        604800 )    ; Negative Cache TTL
+
+; NS записи
+@       IN      NS      ns1.mydomain.local.
+
+; A записи
+@       IN      A       192.168.1.100
+www     IN      A       192.168.1.101
+api     IN      A       192.168.1.102
+
+; MX запис
+@       IN      MX      10 mail.sub.mydomain.local.
+mail    IN      A       192.168.1.103
+
+; CNAME запис
+cdn     IN      CNAME   www.sub.mydomain.local.
+
+; TXT запис
+@       IN      TXT     "Subdomain zone"
+
+; SRV запис
+_http._tcp      IN      SRV     0 0 80 www.sub.mydomain.local.
+EOF
+
+# Встановлення прав
+chown -R bind:bind /etc/bind/zones  # права на зони
+
+# Перевірка конфігурації
+named-checkconf  # перевірка синтаксису
+named-checkzone mydomain.local /etc/bind/zones/db.mydomain.local  # перевірка прямої зони
+named-checkzone 1.168.192.in-addr.arpa /etc/bind/zones/db.192.168.1  # перевірка зворотньої зони
+named-checkzone sub.mydomain.local /etc/bind/zones/db.sub.mydomain.local  # перевірка субдомену
+
+# Перезапуск Bind9
+systemctl restart bind9  # перезапуск
+systemctl enable bind9  # автозапуск
+
+# Перевірка статусу
+systemctl status bind9  # статус служби
+
+# Тестування записів
+dig @127.0.0.1 mydomain.local ANY  # всі записи домену
+dig @127.0.0.1 mydomain.local MX  # MX запис
+dig @127.0.0.1 webmail.mydomain.local CNAME  # CNAME запис
+dig @127.0.0.1 mydomain.local TXT  # TXT запис
+dig @127.0.0.1 _ldap._tcp.mydomain.local SRV  # SRV запис
+dig @127.0.0.1 -x 192.168.1.10  # зворотній запис
+dig @127.0.0.1 www.sub.mydomain.local  # субдомен
+
+
+
+
+14
+
+
+```bash
+# Встановлення Bind9
+apt install bind9 bind9utils -y  # DNS сервер та утиліти
+
+# Налаштування ACL та безпеки
+cat > /etc/bind/named.conf.options << 'EOF'
+acl "trusted" {
+    192.168.1.0/24;
+    localhost;
+    localnets;
+};
+
+options {
+    directory "/var/cache/bind";
+    
+    // Безпека
+    recursion yes;
+    allow-recursion { trusted; };
+    allow-query { trusted; };
+    allow-transfer { none; };
+    version "DNS";
+    
+    // DNSSEC
+    dnssec-validation auto;
+    
+    // Інтерфейси
+    listen-on { 127.0.0.1; 192.168.1.10; };
+    listen-on-v6 { none; };
+};
+EOF
+
+# Налаштування зони
+cat > /etc/bind/named.conf.local << 'EOF'
+zone "mydomain.local" {
+    type master;
+    file "/etc/bind/zones/db.mydomain.local.signed";
+    allow-update { none; };
+    key-directory "/etc/bind/keys";
+    auto-dnssec maintain;
+    inline-signing yes;
+};
+EOF
+
+# Створення директорій
+mkdir -p /etc/bind/zones /etc/bind/keys  # директорії для зон та ключів
+
+# Створення зони
+cat > /etc/bind/zones/db.mydomain.local << 'EOF'
+$TTL    604800
+@       IN      SOA     ns1.mydomain.local. admin.mydomain.local. (
+                        2024010101  ; Serial
+                        604800      ; Refresh
+                        86400       ; Retry
+                        2419200     ; Expire
+                        604800 )    ; Negative Cache TTL
+
+@       IN      NS      ns1.mydomain.local.
+@       IN      A       192.168.1.10
+ns1     IN      A       192.168.1.10
+www     IN      A       192.168.1.20
+mail    IN      A       192.168.1.30
+@       IN      MX      10 mail.mydomain.local.
+EOF
+
+# Генерація KSK (Key Signing Key)
+cd /etc/bind/keys  # перехід до директорії ключів
+dnssec-keygen -a RSASHA256 -b 2048 -n ZONE -f KSK mydomain.local  # KSK ключ
+
+# Генерація ZSK (Zone Signing Key)
+dnssec-keygen -a RSASHA256 -b 1024 -n ZONE mydomain.local  # ZSK ключ
+
+# Встановлення прав на ключі
+chown -R bind:bind /etc/bind/keys  # права bind
+chmod 640 /etc/bind/keys/*  # обмеження доступу
+
+# Підписання зони
+cd /etc/bind/zones  # перехід до директорії зон
+dnssec-signzone -A -3 $(head -c 1000 /dev/random | sha1sum | cut -b 1-16) \
+    -N INCREMENT -o mydomain.local -t db.mydomain.local  # підписання з NSEC3
+
+# Або автоматичне підписання (inline-signing)
+cp db.mydomain.local db.mydomain.local.signed  # копія для підписання
+
+# Встановлення прав
+chown -R bind:bind /etc/bind/zones  # права на зони
+
+# Перевірка конфігурації
+named-checkconf  # перевірка синтаксису
+named-checkzone mydomain.local /etc/bind/zones/db.mydomain.local  # перевірка зони
+
+# Перезапуск Bind9
+systemctl restart bind9  # перезапуск
+systemctl enable bind9  # автозапуск
+
+# Перевірка статусу DNSSEC
+rndc signing -list mydomain.local  # статус підписання
+rndc zonestatus mydomain.local  # статус зони
+
+# Перевірка DNSSEC записів
+dig @127.0.0.1 mydomain.local DNSKEY +dnssec  # DNSKEY запис
+dig @127.0.0.1 mydomain.local RRSIG +dnssec  # RRSIG підписи
+dig @127.0.0.1 mydomain.local DS +dnssec  # DS запис
+
+# Отримання DS записів для реєстратора
+dnssec-dsfromkey /etc/bind/keys/Kmydomain.local.*.key  # DS записи для батьківської зони
+
+# Перевірка валідації DNSSEC
+dig @127.0.0.1 mydomain.local +dnssec +multi  # детальна перевірка
+
+# Моніторинг логів
+journalctl -u bind9 -f  # логи bind9
+```
+
+
+
+
+15
+
+
+
+```bash
+# Встановлення Apache2 та модулів
+apt install apache2 openssl -y  # веб-сервер та SSL
+
+# Увімкнення необхідних модулів
+a2enmod ssl rewrite headers  # SSL, rewrite, заголовки безпеки
+
+# Базові налаштування безпеки
+cat > /etc/apache2/conf-available/security.conf << 'EOF'
+# Приховати версію
+ServerTokens Prod
+ServerSignature Off
+
+# Заборона перегляду директорій
+<Directory />
+    Options -Indexes -FollowSymLinks
+    AllowOverride None
+    Require all denied
+</Directory>
+
+# Заголовки безпеки
+Header always set X-Frame-Options "SAMEORIGIN"
+Header always set X-Content-Type-Options "nosniff"
+Header always set X-XSS-Protection "1; mode=block"
+Header always set Referrer-Policy "strict-origin-when-cross-origin"
+Header always set Content-Security-Policy "default-src 'self';"
+
+# Вимкнення небезпечних методів
+<Location />
+    <LimitExcept GET POST HEAD>
+        Require all denied
+    </LimitExcept>
+</Location>
+
+# Таймаути
+Timeout 60
+KeepAlive On
+MaxKeepAliveRequests 100
+KeepAliveTimeout 5
+EOF
+
+# Увімкнення конфігурації безпеки
+a2enconf security  # активація безпеки
+
+# Створення директорій для сайтів
+mkdir -p /var/www/site1.local/public_html  # перший сайт
+mkdir -p /var/www/site2.local/public_html  # другий сайт
+mkdir -p /var/log/apache2/site1  # логи першого сайту
+mkdir -p /var/log/apache2/site2  # логи другого сайту
+
+# Тестові сторінки
+echo "<h1>Welcome to Site1</h1>" > /var/www/site1.local/public_html/index.html  # сторінка site1
+echo "<h1>Welcome to Site2</h1>" > /var/www/site2.local/public_html/index.html  # сторінка site2
+
+# Встановлення прав
+chown -R www-data:www-data /var/www/  # права на директорії
+
+# Генерація SSL сертифікатів для site1
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout /etc/ssl/private/site1.key \
+    -out /etc/ssl/certs/site1.crt \
+    -subj "/CN=site1.local/O=Company/C=UA"  # самопідписаний сертифікат site1
+
+# Генерація SSL сертифікатів для site2
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout /etc/ssl/private/site2.key \
+    -out /etc/ssl/certs/site2.crt \
+    -subj "/CN=site2.local/O=Company/C=UA"  # самопідписаний сертифікат site2
+
+# Віртуальний хост site1 (HTTP -> HTTPS редірект)
+cat > /etc/apache2/sites-available/site1.local.conf << 'EOF'
+<VirtualHost *:80>
+    ServerName site1.local
+    ServerAlias www.site1.local
+    Redirect permanent / https://site1.local/
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerName site1.local
+    ServerAlias www.site1.local
+    DocumentRoot /var/www/site1.local/public_html
+    
+    # SSL
+    SSLEngine on
+    SSLCertificateFile /etc/ssl/certs/site1.crt
+    SSLCertificateKeyFile /etc/ssl/private/site1.key
+    SSLProtocol all -SSLv3 -TLSv1 -TLSv1.1
+    SSLCipherSuite HIGH:!aNULL:!MD5
+    
+    # Директорія
+    <Directory /var/www/site1.local/public_html>
+        Options -Indexes +FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+    
+    # Логування
+    ErrorLog /var/log/apache2/site1/error.log
+    CustomLog /var/log/apache2/site1/access.log combined
+    LogLevel warn
+</VirtualHost>
+EOF
+
+# Віртуальний хост site2 (HTTP -> HTTPS редірект)
+cat > /etc/apache2/sites-available/site2.local.conf << 'EOF'
+<VirtualHost *:80>
+    ServerName site2.local
+    ServerAlias www.site2.local
+    Redirect permanent / https://site2.local/
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerName site2.local
+    ServerAlias www.site2.local
+    DocumentRoot /var/www/site2.local/public_html
+    
+    # SSL
+    SSLEngine on
+    SSLCertificateFile /etc/ssl/certs/site2.crt
+    SSLCertificateKeyFile /etc/ssl/private/site2.key
+    SSLProtocol all -SSLv3 -TLSv1 -TLSv1.1
+    SSLCipherSuite HIGH:!aNULL:!MD5
+    
+    # Директорія
+    <Directory /var/www/site2.local/public_html>
+        Options -Indexes +FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+    
+    # Логування
+    ErrorLog /var/log/apache2/site2/error.log
+    CustomLog /var/log/apache2/site2/access.log combined
+    LogLevel warn
+</VirtualHost>
+EOF
+
+# Вимкнення дефолтного сайту
+a2dissite 000-default.conf  # вимкнути дефолт
+
+# Увімкнення сайтів
+a2ensite site1.local.conf  # увімкнути site1
+a2ensite site2.local.conf  # увімкнути site2
+
+# Перевірка конфігурації
+apache2ctl configtest  # тест синтаксису
+
+# Перезапуск Apache2
+systemctl restart apache2  # перезапуск
+systemctl enable apache2  # автозапуск
+
+# Додавання записів до hosts (для тестування)
+echo "127.0.0.1 site1.local www.site1.local" >> /etc/hosts  # запис site1
+echo "127.0.0.1 site2.local www.site2.local" >> /etc/hosts  # запис site2
+
+# Перевірка статусу
+systemctl status apache2  # статус служби
+
+# Тестування
+curl -k https://site1.local  # тест site1
+curl -k https://site2.local  # тест site2
+
+# Перевірка логів
+tail -f /var/log/apache2/site1/access.log  # логи site1
+tail -f /var/log/apache2/site2/access.log  # логи site2
+```
+
+
+
+
+16
+
+
+
+
+```bash
+# Встановлення Postfix та Dovecot
+apt install postfix dovecot-core dovecot-pop3d mailutils -y  # поштовий сервер
+# Вибрати: Internet Site, домен: mail.local
+
+# Генерація SSL сертифікатів
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout /etc/ssl/private/mail.key \
+    -out /etc/ssl/certs/mail.crt \
+    -subj "/CN=mail.local/O=Company/C=UA"  # самопідписаний сертифікат
+
+# Налаштування Postfix
+cat > /etc/postfix/main.cf << 'EOF'
+# Базові налаштування
+smtpd_banner = $myhostname ESMTP
+biff = no
+append_dot_mydomain = no
+
+# Домен
+myhostname = mail.local
+mydomain = local
+myorigin = $mydomain
+mydestination = $myhostname, localhost.$mydomain, localhost, $mydomain
+mynetworks = 127.0.0.0/8, 192.168.1.0/24
+
+# Поштові скриньки
+home_mailbox = Maildir/
+mailbox_size_limit = 52428800
+message_size_limit = 10485760
+
+# Безпека
+smtpd_helo_required = yes
+disable_vrfy_command = yes
+smtpd_recipient_restrictions = permit_mynetworks, permit_sasl_authenticated, reject_unauth_destination
+
+# TLS/SSL
+smtpd_tls_cert_file = /etc/ssl/certs/mail.crt
+smtpd_tls_key_file = /etc/ssl/private/mail.key
+smtpd_use_tls = yes
+smtpd_tls_security_level = may
+smtpd_tls_protocols = !SSLv2, !SSLv3, !TLSv1, !TLSv1.1
+smtp_tls_security_level = may
+
+# SASL автентифікація
+smtpd_sasl_type = dovecot
+smtpd_sasl_path = private/auth
+smtpd_sasl_auth_enable = yes
+smtpd_sasl_security_options = noanonymous
+smtpd_sasl_local_domain = $myhostname
+EOF
+
+# Налаштування SMTPS (порт 465) та Submission (порт 587)
+cat > /etc/postfix/master.cf << 'EOF'
+smtp      inet  n       -       y       -       -       smtpd
+submission inet n       -       y       -       -       smtpd
+  -o syslog_name=postfix/submission
+  -o smtpd_tls_security_level=encrypt
+  -o smtpd_sasl_auth_enable=yes
+  -o smtpd_recipient_restrictions=permit_sasl_authenticated,reject
+smtps     inet  n       -       y       -       -       smtpd
+  -o syslog_name=postfix/smtps
+  -o smtpd_tls_wrappermode=yes
+  -o smtpd_sasl_auth_enable=yes
+  -o smtpd_recipient_restrictions=permit_sasl_authenticated,reject
+pickup    unix  n       -       y       60      1       pickup
+cleanup   unix  n       -       y       -       0       cleanup
+qmgr      unix  n       -       n       300     1       qmgr
+tlsmgr    unix  -       -       y       1000?   1       tlsmgr
+rewrite   unix  -       -       y       -       -       trivial-rewrite
+bounce    unix  -       -       y       -       0       bounce
+defer     unix  -       -       y       -       0       bounce
+trace     unix  -       -       y       -       0       bounce
+verify    unix  -       -       y       -       1       verify
+flush     unix  n       -       y       1000?   0       flush
+proxymap  unix  -       -       n       -       -       proxymap
+proxywrite unix -       -       n       -       1       proxymap
+smtp      unix  -       -       y       -       -       smtp
+relay     unix  -       -       y       -       -       smtp
+showq     unix  n       -       y       -       -       showq
+error     unix  -       -       y       -       -       error
+retry     unix  -       -       y       -       -       error
+discard   unix  -       -       y       -       -       discard
+local     unix  -       n       n       -       -       local
+virtual   unix  -       n       n       -       -       virtual
+lmtp      unix  -       -       y       -       -       lmtp
+anvil     unix  -       -       y       -       1       anvil
+scache    unix  -       -       y       -       1       scache
+EOF
+
+# Налаштування Dovecot
+cat > /etc/dovecot/dovecot.conf << 'EOF'
+protocols = pop3
+listen = *, ::
+EOF
+
+# Налаштування поштових скриньок
+cat > /etc/dovecot/conf.d/10-mail.conf << 'EOF'
+mail_location = maildir:~/Maildir
+namespace inbox {
+    inbox = yes
+}
+EOF
+
+# Налаштування автентифікації Dovecot
+cat > /etc/dovecot/conf.d/10-auth.conf << 'EOF'
+disable_plaintext_auth = no
+auth_mechanisms = plain login
+!include auth-system.conf.ext
+EOF
+
+# Налаштування SSL для Dovecot
+cat > /etc/dovecot/conf.d/10-ssl.conf << 'EOF'
+ssl = required
+ssl_cert = </etc/ssl/certs/mail.crt
+ssl_key = </etc/ssl/private/mail.key
+ssl_min_protocol = TLSv1.2
+EOF
+
+# Налаштування POP3S
+cat > /etc/dovecot/conf.d/20-pop3.conf << 'EOF'
+protocol pop3 {
+    pop3_uidl_format = %08Xu%08Xv
+}
+EOF
+
+# Налаштування master для POP3S
+cat > /etc/dovecot/conf.d/10-master.conf << 'EOF'
+service pop3-login {
+    inet_listener pop3 {
+        port = 0
+    }
+    inet_listener pop3s {
+        port = 995
+        ssl = yes
+    }
+}
+
+service auth {
+    unix_listener /var/spool/postfix/private/auth {
+        mode = 0660
+        user = postfix
+        group = postfix
+    }
+}
+EOF
+
+# Налаштування логування Dovecot
+cat > /etc/dovecot/conf.d/10-logging.conf << 'EOF'
+log_path = /var/log/dovecot.log
+auth_verbose = yes
+auth_verbose_passwords = no
+mail_debug = no
+EOF
+
+# Створення тестового користувача
+useradd -m -s /bin/bash user1  # створення користувача
+echo "user1:password123" | chpasswd  # встановлення пароля
+
+# Створення Maildir
+mkdir -p /home/user1/Maildir/{cur,new,tmp}  # структура Maildir
+chown -R user1:user1 /home/user1/Maildir  # права
+
+# Перезапуск служб
+systemctl restart postfix  # перезапуск postfix
+systemctl restart dovecot  # перезапуск dovecot
+systemctl enable postfix dovecot  # автозапуск
+
+# Перевірка портів
+ss -tlnp | grep -E "25|465|587|995"  # перевірка прослуховування
+
+# Тестовий лист
+echo "Test message body" | mail -s "Test Subject" user1@mail.local  # тестовий лист
+
+# Перевірка логів
+tail -f /var/log/mail.log  # логи postfix
+tail -f /var/log/dovecot.log  # логи dovecot
+
+# Додавання запису hosts (для тестування)
+echo "192.168.1.10 mail.local" >> /etc/hosts  # запис DNS
+
+# === НАЛАШТУВАННЯ THUNDERBIRD (на клієнті) ===
+# 1. Відкрити Thunderbird
+# 2. Account Settings → Add Mail Account
+# 3. Ввести дані:
+#    - Your name: User1
+#    - Email: user1@mail.local
+#    - Password: password123
+# 4. Manual config:
+#    Incoming (POP3S):
+#    - Protocol: POP3
+#    - Server: mail.local (або IP 192.168.1.10)
+#    - Port: 995
+#    - SSL: SSL/TLS
+#    - Authentication: Normal password
+#    Outgoing (SMTPS):
+#    - Server: mail.local (або IP 192.168.1.10)
+#    - Port: 465
+#    - SSL: SSL/TLS
+#    - Authentication: Normal password
+# 5. Username: user1
+# 6. Accept self-signed certificate → Confirm Security Exception
+# 7. Done → перевірити отримання тестового листа
+```
+
+
+
+
+
+
+17
+
+
+
+
+
+
+```bash
+# Встановлення Postfix, Dovecot та OpenDKIM
+apt install postfix dovecot-core dovecot-imapd dovecot-pop3d opendkim opendkim-tools mailutils -y  # поштові служби
+# Вибрати: Internet Site, домен: mail.local
+
+# Генерація SSL сертифікатів
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout /etc/ssl/private/mail.key \
+    -out /etc/ssl/certs/mail.crt \
+    -subj "/CN=mail.local/O=Company/C=UA"  # самопідписаний сертифікат
+
+# Створення директорій для DKIM
+mkdir -p /etc/opendkim/keys/mail.local  # директорія ключів
+
+# Генерація DKIM ключів
+opendkim-genkey -b 2048 -d mail.local -D /etc/opendkim/keys/mail.local -s default -v  # генерація ключів
+
+# Встановлення прав на ключі
+chown -R opendkim:opendkim /etc/opendkim  # права opendkim
+chmod 600 /etc/opendkim/keys/mail.local/default.private  # захист приватного ключа
+
+# Налаштування OpenDKIM
+cat > /etc/opendkim.conf << 'EOF'
+Syslog              yes
+SyslogSuccess       yes
+LogWhy              yes
+Canonicalization    relaxed/simple
+Mode                sv
+SubDomains          no
+AutoRestart         yes
+AutoRestartRate     10/1M
+Background          yes
+DNSTimeout          5
+SignatureAlgorithm  rsa-sha256
+
+KeyTable            /etc/opendkim/KeyTable
+SigningTable        refile:/etc/opendkim/SigningTable
+ExternalIgnoreList  /etc/opendkim/TrustedHosts
+InternalHosts       /etc/opendkim/TrustedHosts
+
+UserID              opendkim
+UMask               007
+Socket              inet:8891@localhost
+PidFile             /run/opendkim/opendkim.pid
+EOF
+
+# Таблиця ключів
+cat > /etc/opendkim/KeyTable << 'EOF'
+default._domainkey.mail.local mail.local:default:/etc/opendkim/keys/mail.local/default.private
+EOF
+
+# Таблиця підписів
+cat > /etc/opendkim/SigningTable << 'EOF'
+*@mail.local default._domainkey.mail.local
+EOF
+
+# Довірені хости
+cat > /etc/opendkim/TrustedHosts << 'EOF'
+127.0.0.1
+localhost
+mail.local
+*.mail.local
+EOF
+
+# Налаштування Postfix
+cat > /etc/postfix/main.cf << 'EOF'
+# Базові налаштування
+smtpd_banner = $myhostname ESMTP
+biff = no
+
+# Домен
+myhostname = mail.local
+mydomain = mail.local
+myorigin = $mydomain
+mydestination = $myhostname, localhost.$mydomain, localhost, $mydomain
+mynetworks = 127.0.0.0/8, 192.168.1.0/24
+
+# Поштові скриньки
+home_mailbox = Maildir/
+mailbox_size_limit = 52428800
+
+# Безпека
+smtpd_helo_required = yes
+disable_vrfy_command = yes
+smtpd_recipient_restrictions = permit_mynetworks, permit_sasl_authenticated, reject_unauth_destination
+
+# TLS/SSL
+smtpd_tls_cert_file = /etc/ssl/certs/mail.crt
+smtpd_tls_key_file = /etc/ssl/private/mail.key
+smtpd_use_tls = yes
+smtpd_tls_security_level = may
+smtpd_tls_protocols = !SSLv2, !SSLv3, !TLSv1, !TLSv1.1
+
+# SASL автентифікація
+smtpd_sasl_type = dovecot
+smtpd_sasl_path = private/auth
+smtpd_sasl_auth_enable = yes
+smtpd_sasl_security_options = noanonymous
+
+# DKIM
+milter_default_action = accept
+milter_protocol = 6
+smtpd_milters = inet:localhost:8891
+non_smtpd_milters = inet:localhost:8891
+EOF
+
+# Налаштування master.cf для SMTPS
+cat >> /etc/postfix/master.cf << 'EOF'
+submission inet n       -       y       -       -       smtpd
+  -o smtpd_tls_security_level=encrypt
+  -o smtpd_sasl_auth_enable=yes
+smtps     inet  n       -       y       -       -       smtpd
+  -o smtpd_tls_wrappermode=yes
+  -o smtpd_sasl_auth_enable=yes
+EOF
+
+# Налаштування Dovecot
+cat > /etc/dovecot/dovecot.conf << 'EOF'
+protocols = imap pop3
+listen = *, ::
+EOF
+
+# Поштові скриньки Dovecot
+cat > /etc/dovecot/conf.d/10-mail.conf << 'EOF'
+mail_location = maildir:~/Maildir
+namespace inbox {
+    inbox = yes
+}
+EOF
+
+# Автентифікація Dovecot
+cat > /etc/dovecot/conf.d/10-auth.conf << 'EOF'
+disable_plaintext_auth = no
+auth_mechanisms = plain login
+!include auth-system.conf.ext
+EOF
+
+# SSL Dovecot
+cat > /etc/dovecot/conf.d/10-ssl.conf << 'EOF'
+ssl = required
+ssl_cert = </etc/ssl/certs/mail.crt
+ssl_key = </etc/ssl/private/mail.key
+ssl_min_protocol = TLSv1.2
+EOF
+
+# Master Dovecot
+cat > /etc/dovecot/conf.d/10-master.conf << 'EOF'
+service imap-login {
+    inet_listener imap {
+        port = 143
+    }
+    inet_listener imaps {
+        port = 993
+        ssl = yes
+    }
+}
+
+service pop3-login {
+    inet_listener pop3 {
+        port = 110
+    }
+    inet_listener pop3s {
+        port = 995
+        ssl = yes
+    }
+}
+
+service auth {
+    unix_listener /var/spool/postfix/private/auth {
+        mode = 0660
+        user = postfix
+        group = postfix
+    }
+}
+EOF
+
+# Логування Dovecot
+cat > /etc/dovecot/conf.d/10-logging.conf << 'EOF'
+log_path = /var/log/dovecot.log
+auth_verbose = yes
+EOF
+
+# Створення тестового користувача
+useradd -m -s /bin/bash user1  # створення користувача
+echo "user1:password123" | chpasswd  # пароль
+
+# Створення Maildir
+mkdir -p /home/user1/Maildir/{cur,new,tmp}  # структура Maildir
+chown -R user1:user1 /home/user1/Maildir  # права
+
+# Створення PID директорії для OpenDKIM
+mkdir -p /run/opendkim  # директорія PID
+chown opendkim:opendkim /run/opendkim  # права
+
+# Перезапуск служб
+systemctl restart opendkim  # перезапуск DKIM
+systemctl restart postfix  # перезапуск postfix
+systemctl restart dovecot  # перезапуск dovecot
+systemctl enable opendkim postfix dovecot  # автозапуск
+
+# Перевірка статусу
+systemctl status opendkim postfix dovecot  # статус служб
+
+# Показати публічний DKIM ключ (для DNS запису)
+cat /etc/opendkim/keys/mail.local/default.txt  # TXT запис для DNS
+
+# Перевірка портів
+ss -tlnp | grep -E "25|465|587|143|993|110|995|8891"  # прослуховування
+
+# Тестовий лист
+echo "Test DKIM message" | mail -s "DKIM Test" user1@mail.local  # відправка
+
+# Перевірка DKIM підпису в заголовках
+cat /home/user1/Maildir/new/*  # перегляд листа з DKIM-Signature
+
+# Перевірка логів
+tail -f /var/log/mail.log  # логи postfix/opendkim
+tail -f /var/log/dovecot.log  # логи dovecot
+
+# Додавання запису hosts
+echo "192.168.1.10 mail.local" >> /etc/hosts  # DNS запис
+
+# === НАЛАШТУВАННЯ THUNDERBIRD ===
+# 1. Відкрити Thunderbird → Add Mail Account
+# 2. Дані:
+#    - Name: User1
+#    - Email: user1@mail.local
+#    - Password: password123
+# 3. Manual config:
+#    Incoming (IMAP):
+#    - Server: mail.local
+#    - Port: 993
+#    - SSL: SSL/TLS
+#    - Auth: Normal password
+#    Outgoing (SMTP):
+#    - Server: mail.local
+#    - Port: 465
+#    - SSL: SSL/TLS
+#    - Auth: Normal password
+# 4. Username: user1
+# 5. Accept certificate → Confirm Security Exception
+# 6. Відправити тестовий лист → View Source → перевірити DKIM-Signature header
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

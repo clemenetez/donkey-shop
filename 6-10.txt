@@ -1,0 +1,240 @@
+
+6
+
+
+
+
+```bash
+# Встановлення SELinux на Debian
+apt install selinux-basics selinux-policy-default auditd -y  # базові пакети SELinux
+
+# Активація SELinux
+selinux-activate  # активація SELinux
+reboot  # перезавантаження для застосування
+
+# Після перезавантаження - увімкнення enforcing режиму
+setenforce 1  # примусовий режим
+sestatus  # перевірка статусу
+
+# Встановлення vsftpd та утиліт SELinux
+apt install vsftpd policycoreutils-python-utils selinux-policy-dev -y  # FTP сервер та утиліти
+
+# Налаштування anonymous FTP на портах 80 та 23
+cat >> /etc/vsftpd.conf << 'EOF'
+listen=YES
+listen_port=80
+ftp_data_port=23
+anonymous_enable=YES
+connect_from_port_20=NO
+EOF
+
+# Додавання портів до SELinux контексту FTP
+semanage port -a -t ftp_port_t -p tcp 80 || semanage port -m -t ftp_port_t -p tcp 80  # порт команд
+semanage port -a -t ftp_data_port_t -p tcp 23 || semanage port -m -t ftp_data_port_t -p tcp 23  # порт даних
+
+# Створення власного модуля політики
+mkdir -p /tmp/selinux && cd /tmp/selinux  # робоча директорія
+cat > ftpcustom.te << 'EOF'
+policy_module(ftpcustom, 1.0)
+require {
+    type ftpd_t;
+    class tcp_socket { name_bind name_connect };
+}
+allow ftpd_t self:tcp_socket { name_bind name_connect };
+EOF
+
+# Компіляція та встановлення модуля
+make -f /usr/share/selinux/devel/Makefile ftpcustom.pp  # компіляція
+semodule -i ftpcustom.pp  # встановлення модуля
+
+# Увімкнення SELinux booleans для FTP
+setsebool -P ftpd_connect_all_unreserved on  # нестандартні порти
+setsebool -P allow_ftpd_full_access on  # повний доступ
+
+# Перезапуск служби
+systemctl restart vsftpd  # перезапуск FTP
+
+# Перевірка
+semanage port -l | grep ftp  # список FTP портів
+ss -tlnp | grep vsftpd  # прослуховування портів
+ausearch -m avc -ts recent  # перевірка відмов SELinux
+```
+
+
+
+
+7
+
+
+
+# Створення користувача user13 з паролем
+New-LocalUser -Name "user13" -Password (ConvertTo-SecureString "P@ssw0rd123" -AsPlainText -Force) -FullName "User 13"  # новий користувач
+
+# Зміна пароля користувача
+Set-LocalUser -Name "user13" -Password (ConvertTo-SecureString "NewP@ss456" -AsPlainText -Force)  # новий пароль
+
+# Заборона зміни пароля користувачем
+Set-LocalUser -Name "user13" -UserMayChangePassword $false  # заборона зміни пароля
+
+# Надання прав адміністратора
+Add-LocalGroupMember -Group "Administrators" -Member "user13"  # додавання в адміністратори
+
+# Створення локальної групи TestUsers
+New-LocalGroup -Name "TestUsers" -Description "Test group"  # нова група
+
+# Додавання користувача в групу TestUsers
+Add-LocalGroupMember -Group "TestUsers" -Member "user13"  # додавання в групу
+
+# Перевірка користувача та груп
+Get-LocalUser -Name "user13"  # інформація про користувача
+Get-LocalGroupMember -Group "TestUsers"  # члени групи
+
+# Видалення користувача з груп перед видаленням
+Remove-LocalGroupMember -Group "Administrators" -Member "user13"  # видалення з адмінів
+Remove-LocalGroupMember -Group "TestUsers" -Member "user13"  # видалення з групи
+
+# Видалення користувача
+Remove-LocalUser -Name "user13"  # видалення користувача
+
+# Видалення групи
+Remove-LocalGroup -Name "TestUsers"  # видалення групи
+
+
+
+8
+
+
+# Блокування Telegram (вихідні з'єднання)
+New-NetFirewallRule -DisplayName "Block Telegram Out" -Direction Outbound -Program "$env:APPDATA\Telegram Desktop\Telegram.exe" -Action Block  # блокування вихідних
+
+# Блокування Telegram (вхідні з'єднання)
+New-NetFirewallRule -DisplayName "Block Telegram In" -Direction Inbound -Program "$env:APPDATA\Telegram Desktop\Telegram.exe" -Action Block  # блокування вхідних
+
+# Перевірка створених правил
+Get-NetFirewallRule -DisplayName "Block Telegram*" | Format-Table Name, DisplayName, Direction, Action  # список правил
+
+# Для видалення правил (якщо потрібно)
+# Remove-NetFirewallRule -DisplayName "Block Telegram Out"  # видалення вихідного правила
+# Remove-NetFirewallRule -DisplayName "Block Telegram In"  # видалення вхідного правила
+
+
+
+
+
+9
+
+
+
+```
+# Встановлення Active Directory та DNS
+dcpromo  # запуск майстра AD
+→ Create a new domain in a new forest  # новий ліс
+→ FQDN: mydomain.local  # ім'я домену
+→ Forest functional level: Windows Server 2008  # рівень лісу
+→ ✓ DNS Server  # встановити DNS
+→ Set DSRM password  # пароль відновлення
+→ Finish → Reboot  # завершення та перезавантаження
+
+# Встановлення DHCP
+Server Manager → Roles → Add Roles  # додати роль
+→ ✓ DHCP Server → Next  # вибрати DHCP
+→ Select network interface  # вибрати мережевий адаптер
+→ Parent domain: mydomain.local  # ім'я домену
+→ Add Scope: 192.168.1.100 - 192.168.1.200  # діапазон IP
+→ Subnet mask: 255.255.255.0  # маска
+→ Default gateway: 192.168.1.1  # шлюз
+→ DNS: 192.168.1.10 (IP сервера)  # DNS сервер
+→ ✓ Disable DHCPv6  # відключити IPv6
+→ Authorize in AD → Install  # авторизація та встановлення
+
+# Створення користувача User666
+Start → Administrative Tools → Active Directory Users and Computers  # відкрити AD
+→ mydomain.local → Users → ПКМ → New → User  # новий користувач
+→ User logon name: User666  # ім'я входу
+→ Password: P@ssw0rd123  # пароль
+→ ✗ User must change password  # зняти галочку
+→ Finish  # завершити
+
+# Налаштування клієнта Windows 7
+Control Panel → Network → Change adapter settings  # мережеві адаптери
+→ ПКМ на адаптері → Properties → IPv4 → Properties  # властивості
+→ ● Obtain IP address automatically  # автоматичний IP
+→ ● Obtain DNS server automatically  # автоматичний DNS
+→ OK  # зберегти
+
+# Приєднання до домену (Windows 7)
+ПКМ Computer → Properties → Change settings → Change  # зміна домену
+→ ● Domain: mydomain.local  # ввести домен
+→ Username: Administrator Password: [пароль]  # облікові дані адміна
+→ OK → Reboot  # перезавантаження
+
+# Вхід користувачем User666 (Windows 7)
+Ctrl+Alt+Del → Switch User  # зміна користувача
+→ mydomain\User666  # ім'я користувача
+→ P@ssw0rd123  # пароль
+→ Enter  # вхід
+```
+
+
+
+10
+
+
+# Імпорт модуля Active Directory
+Import-Module ActiveDirectory  # завантаження модуля AD
+
+# Перевірка поточної політики паролів
+Get-ADDefaultDomainPasswordPolicy  # поточні налаштування
+
+# Налаштування політики паролів згідно PCI DSS 1.2
+Set-ADDefaultDomainPasswordPolicy -Identity (Get-ADDomain).DNSRoot `
+    -MinPasswordLength 7 `
+    -PasswordHistoryCount 4 `
+    -MaxPasswordAge 90.00:00:00 `
+    -MinPasswordAge 1.00:00:00 `
+    -ComplexityEnabled $true `
+    -ReversibleEncryptionEnabled $false `
+    -LockoutThreshold 6 `
+    -LockoutDuration 00:30:00 `
+    -LockoutObservationWindow 00:30:00  # всі вимоги PCI DSS 1.2
+
+# Перевірка застосованих налаштувань
+Get-ADDefaultDomainPasswordPolicy  # перевірка політики
+
+# Примусове оновлення групових політик на контролері
+gpupdate /force  # оновлення політик
+
+# Створення Fine-Grained Password Policy (опціонально для окремих груп)
+New-ADFineGrainedPasswordPolicy -Name "PCI-DSS-Policy" `
+    -Precedence 10 `
+    -MinPasswordLength 7 `
+    -PasswordHistoryCount 4 `
+    -MaxPasswordAge 90.00:00:00 `
+    -MinPasswordAge 1.00:00:00 `
+    -ComplexityEnabled $true `
+    -LockoutThreshold 6 `
+    -LockoutDuration 00:30:00 `
+    -LockoutObservationWindow 00:30:00 `
+    -ReversibleEncryptionEnabled $false  # детальна політика
+
+# Застосування політики до групи Domain Users
+Add-ADFineGrainedPasswordPolicySubject -Identity "PCI-DSS-Policy" -Subjects "Domain Users"  # прив'язка до користувачів
+
+# Перевірка Fine-Grained політики
+Get-ADFineGrainedPasswordPolicy -Identity "PCI-DSS-Policy"  # перегляд політики
+
+# Оновлення політик на клієнтах (виконати на клієнті або через Invoke-Command)
+Invoke-Command -ComputerName "Client01" -ScriptBlock { gpupdate /force }  # оновлення на клієнті
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,86 @@
+# 0) Оновлення та встановлення
+sudo apt update
+sudo apt install -y postfix dovecot-core dovecot-pop3d openssl
+sudo systemctl enable postfix dovecot
+sudo systemctl start postfix dovecot
+# 1) TLS-сертифікат для поштового сервера (lab)
+sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+-keyout /etc/ssl/private/mail.key \
+-out /etc/ssl/certs/mail.crt \
+-subj "/C=UA/L=Kyiv/O=Lab/CN=mail.site1.local"
+
+sudo chmod 600 /etc/ssl/private/mail.key
+sudo chown root:root /etc/ssl/private/mail.key
+# 2) Postfix — основний конфіг
+sudo nano /etc/postfix/main.cf
+myhostname = mail.site1.local
+mydomain = site1.local
+myorigin = $mydomain
+inet_interfaces = all
+inet_protocols = ipv4
+
+mydestination = $myhostname, localhost.$mydomain, localhost, $mydomain
+home_mailbox = Maildir/
+
+smtpd_banner = $myhostname ESMTP
+disable_vrfy_command = yes
+
+smtpd_tls_cert_file = /etc/ssl/certs/mail.crt
+smtpd_tls_key_file  = /etc/ssl/private/mail.key
+smtpd_tls_security_level = encrypt
+smtpd_tls_auth_only = yes
+
+smtp_tls_security_level = encrypt
+smtp_tls_note_starttls_offer = yes
+
+smtpd_sasl_type = dovecot
+smtpd_sasl_path = private/auth
+smtpd_sasl_auth_enable = yes
+
+smtpd_recipient_restrictions =
+    permit_sasl_authenticated,
+    permit_mynetworks,
+    reject_unauth_destination
+
+sudo nano /etc/postfix/master.cf
+smtps     inet  n       -       y       -       -       smtpd
+  -o smtpd_tls_wrappermode=yes
+  -o smtpd_sasl_auth_enable=yes
+# 4) Dovecot — Maildir
+sudo nano /etc/dovecot/conf.d/10-mail.conf
+mail_location = maildir:~/Maildir
+sudo nano /etc/dovecot/conf.d/10-auth.conf
+disable_plaintext_auth = yes
+auth_mechanisms = plain login
+# 6) Dovecot — TLS
+sudo nano /etc/dovecot/conf.d/10-ssl.conf
+ssl = required
+ssl_cert = </etc/ssl/certs/mail.crt
+ssl_key  = </etc/ssl/private/mail.key
+# 7) Dovecot — POP3S
+sudo nano /etc/dovecot/conf.d/20-pop3.conf
+protocol pop3 {
+  ssl = required
+}
+
+# 8) Dovecot → Postfix (SASL socket)
+sudo nano /etc/dovecot/conf.d/10-master.conf
+service auth {
+  unix_listener /var/spool/postfix/private/auth {
+    mode = 0660
+    user = postfix
+    group = postfix
+  }
+}
+service pop3-login {
+  inet_listener pop3s {
+    #port = 995
+    #ssl = yes
+  }
+}
+# 9) Перезапуск сервісів
+sudo systemctl restart dovecot
+sudo systemctl restart postfix
+sudo systemctl status postfix dovecot --no-pager
+
+sudo adduser user1
